@@ -1,0 +1,46 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# SwiftPM and Xcode build products
+.build/
+.swiftpm/
+DerivedData/
+dist/
+
+# Xcode user-local state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.moved-aside
+*.xccheckout
+
+# Local editor and agent state
+.codex/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Local environment, secrets, and signing material
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+
+# Personal/local helper scripts and fixtures
+script/*personal*
+script/*local*
+*.local.swift
+*.personal.swift
