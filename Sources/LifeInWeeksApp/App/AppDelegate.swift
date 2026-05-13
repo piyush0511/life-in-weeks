@@ -104,11 +104,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let isDark =
             NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua])
             == .darkAqua
+        // Per-style preset fingerprint: includes theme + all 4 block positions.
+        let presetParts = settings.stylePresets
+            .sorted(by: { $0.key < $1.key })
+            .map { (key, preset) -> String in
+                let posStr = BlockID.allCases
+                    .map { b -> String in
+                        let p = preset.position(for: b)
+                        return "\(b.rawValue)=\(String(format: "%.3f", p.x)),\(String(format: "%.3f", p.y))"
+                    }
+                    .joined(separator: ";")
+                return "\(key):\(preset.themeMode.rawValue):\(preset.theme.rawValue):\(preset.dayTheme.rawValue):\(preset.nightTheme.rawValue):\(posStr)"
+            }
+            .joined(separator: "|")
+
         return [
-            settings.theme.rawValue,
-            settings.themeMode.rawValue,
-            settings.dayTheme.rawValue,
-            settings.nightTheme.rawValue,
+            settings.wallpaperStyle.rawValue,
+            presetParts,
             isDark ? "dark" : "light",
             String(settings.normalizedLifeExpectancyYears),
             String(Int(dateKey)),
@@ -122,10 +134,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settings.currentHobby,
             settings.currentlyLearning,
             settings.wallpaperTitle,
-            String(settings.clampedLayoutTitleYRatio),
-            String(settings.clampedLayoutFactsYRatio),
-            String(settings.clampedLayoutGridYRatio),
-            String(settings.clampedLayoutFooterBottomRatio),
         ].joined(separator: "|")
     }
 }

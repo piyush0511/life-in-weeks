@@ -20,6 +20,13 @@ extension CalendarTheme {
         case .ocean: return "Ocean"
         case .paper: return "Paper"
         case .midnight: return "Midnight"
+        case .editorialLight: return "Linen"
+        case .editorialDark: return "Plum Press"
+        case .editorialSage: return "Sage Bureau"
+        case .editorialClay: return "Clay Folio"
+        case .minimalLight: return "Bone"
+        case .minimalDark: return "Obsidian"
+        case .minimalMono: return "Newsprint"
         }
     }
 
@@ -31,6 +38,13 @@ extension CalendarTheme {
         case .ocean: return "Cool tidal blues"
         case .paper: return "Bright, like a notebook"
         case .midnight: return "Deep, hushed night"
+        case .editorialLight: return "Cream paper · ink black"
+        case .editorialDark: return "Inked plum · oxblood accent"
+        case .editorialSage: return "Pale sage · forest accent"
+        case .editorialClay: return "Dusty clay · brick accent"
+        case .minimalLight: return "Off-white · slate black"
+        case .minimalDark: return "Near-black · bone white"
+        case .minimalMono: return "Soft gray · single accent"
         }
     }
 
@@ -155,6 +169,152 @@ extension CalendarTheme {
                 accent: Color(red: 0.62, green: 0.45, blue: 0.95),
                 foreground: .white,
                 isLight: false
+            )
+
+        // MARK: Editorial palette
+
+        case .editorialLight:
+            return ThemeStyle(
+                background: [
+                    Color(red: 0.97, green: 0.95, blue: 0.91),
+                    Color(red: 0.95, green: 0.92, blue: 0.86),
+                    Color(red: 0.93, green: 0.90, blue: 0.83),
+                ],
+                lived: [
+                    Color(red: 0.12, green: 0.14, blue: 0.18),
+                    Color(red: 0.20, green: 0.22, blue: 0.28),
+                ],
+                current: [
+                    Color(red: 0.78, green: 0.30, blue: 0.20),
+                    Color(red: 0.62, green: 0.20, blue: 0.16),
+                ],
+                future: Color.black.opacity(0.10),
+                accent: Color(red: 0.62, green: 0.20, blue: 0.16),
+                foreground: Color(red: 0.10, green: 0.11, blue: 0.14),
+                isLight: true
+            )
+        case .editorialDark:
+            return ThemeStyle(
+                background: [
+                    Color(red: 0.09, green: 0.05, blue: 0.10),
+                    Color(red: 0.13, green: 0.07, blue: 0.13),
+                    Color(red: 0.05, green: 0.03, blue: 0.07),
+                ],
+                lived: [
+                    Color(red: 0.95, green: 0.83, blue: 0.55),
+                    Color(red: 0.74, green: 0.58, blue: 0.32),
+                ],
+                current: [
+                    Color(red: 0.98, green: 0.42, blue: 0.42),
+                    Color(red: 0.78, green: 0.25, blue: 0.30),
+                ],
+                future: Color.white.opacity(0.10),
+                accent: Color(red: 0.95, green: 0.55, blue: 0.42),
+                foreground: Color(red: 0.97, green: 0.94, blue: 0.88),
+                isLight: false
+            )
+        case .editorialSage:
+            return ThemeStyle(
+                background: [
+                    Color(red: 0.86, green: 0.88, blue: 0.79),
+                    Color(red: 0.78, green: 0.82, blue: 0.72),
+                    Color(red: 0.70, green: 0.75, blue: 0.65),
+                ],
+                lived: [
+                    Color(red: 0.15, green: 0.27, blue: 0.20),
+                    Color(red: 0.10, green: 0.20, blue: 0.14),
+                ],
+                current: [
+                    Color(red: 0.83, green: 0.56, blue: 0.18),
+                    Color(red: 0.62, green: 0.39, blue: 0.11),
+                ],
+                future: Color.black.opacity(0.10),
+                accent: Color(red: 0.62, green: 0.39, blue: 0.11),
+                foreground: Color(red: 0.10, green: 0.18, blue: 0.13),
+                isLight: true
+            )
+        case .editorialClay:
+            return ThemeStyle(
+                background: [
+                    Color(red: 0.93, green: 0.83, blue: 0.78),
+                    Color(red: 0.88, green: 0.76, blue: 0.70),
+                    Color(red: 0.82, green: 0.69, blue: 0.61),
+                ],
+                lived: [
+                    Color(red: 0.40, green: 0.18, blue: 0.16),
+                    Color(red: 0.55, green: 0.26, blue: 0.20),
+                ],
+                current: [
+                    Color(red: 0.91, green: 0.66, blue: 0.20),
+                    Color(red: 0.75, green: 0.48, blue: 0.12),
+                ],
+                future: Color.black.opacity(0.09),
+                accent: Color(red: 0.55, green: 0.26, blue: 0.20),
+                foreground: Color(red: 0.18, green: 0.10, blue: 0.09),
+                isLight: true
+            )
+
+        // MARK: Minimal palette
+
+        case .minimalLight:
+            return ThemeStyle(
+                background: [
+                    Color(red: 0.98, green: 0.98, blue: 0.97),
+                    Color(red: 0.96, green: 0.96, blue: 0.94),
+                    Color(red: 0.94, green: 0.94, blue: 0.92),
+                ],
+                lived: [
+                    Color(red: 0.13, green: 0.13, blue: 0.15),
+                    Color(red: 0.20, green: 0.20, blue: 0.22),
+                ],
+                current: [
+                    Color(red: 0.25, green: 0.55, blue: 0.95),
+                    Color(red: 0.15, green: 0.40, blue: 0.80),
+                ],
+                future: Color.black.opacity(0.08),
+                accent: Color(red: 0.25, green: 0.55, blue: 0.95),
+                foreground: Color(red: 0.12, green: 0.12, blue: 0.14),
+                isLight: true
+            )
+        case .minimalDark:
+            return ThemeStyle(
+                background: [
+                    Color(red: 0.05, green: 0.05, blue: 0.06),
+                    Color(red: 0.08, green: 0.08, blue: 0.09),
+                    Color(red: 0.03, green: 0.03, blue: 0.04),
+                ],
+                lived: [
+                    Color(red: 0.93, green: 0.93, blue: 0.90),
+                    Color(red: 0.75, green: 0.75, blue: 0.73),
+                ],
+                current: [
+                    Color(red: 0.95, green: 0.78, blue: 0.20),
+                    Color(red: 0.85, green: 0.62, blue: 0.10),
+                ],
+                future: Color.white.opacity(0.08),
+                accent: Color(red: 0.95, green: 0.78, blue: 0.20),
+                foreground: Color(red: 0.96, green: 0.96, blue: 0.95),
+                isLight: false
+            )
+        case .minimalMono:
+            return ThemeStyle(
+                background: [
+                    Color(red: 0.91, green: 0.90, blue: 0.88),
+                    Color(red: 0.88, green: 0.87, blue: 0.85),
+                    Color(red: 0.84, green: 0.83, blue: 0.81),
+                ],
+                lived: [
+                    Color(red: 0.18, green: 0.18, blue: 0.20),
+                    Color(red: 0.30, green: 0.30, blue: 0.32),
+                ],
+                current: [
+                    Color(red: 0.80, green: 0.30, blue: 0.30),
+                    Color(red: 0.65, green: 0.20, blue: 0.20),
+                ],
+                future: Color.black.opacity(0.07),
+                accent: Color(red: 0.65, green: 0.20, blue: 0.20),
+                foreground: Color(red: 0.15, green: 0.15, blue: 0.17),
+                isLight: true
             )
         }
     }

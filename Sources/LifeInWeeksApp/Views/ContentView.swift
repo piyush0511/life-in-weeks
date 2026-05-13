@@ -5,7 +5,7 @@ struct ContentView: View {
     @ObservedObject var preferences: PreferencesModel
 
     var body: some View {
-        let style = preferences.settings.theme.style
+        let style = preferences.settings.activePreset.theme.style
 
         ZStack {
             AtmosphericBackground(style: style)
@@ -21,6 +21,11 @@ struct ContentView: View {
                     AppHeader(style: style)
 
                     WallpaperPreviewCard(preferences: preferences, style: style)
+
+                    WallpaperStyleField(
+                        selection: wallpaperStyleBinding,
+                        style: style
+                    )
 
                     TitleField(text: titleBinding, style: style)
 
@@ -49,6 +54,7 @@ struct ContentView: View {
                     )
 
                     ThemeField(
+                        availableThemes: preferences.settings.wallpaperStyle.availableThemes,
                         mode: themeModeBinding,
                         customSelection: themeBinding,
                         daySelection: dayThemeBinding,
@@ -57,15 +63,16 @@ struct ContentView: View {
                     )
 
                     LayoutField(
-                        titleY: layoutTitleYBinding,
-                        factsY: layoutFactsYBinding,
-                        gridY: layoutGridYBinding,
-                        footerBottom: layoutFooterBottomBinding,
+                        titlePos: blockPositionBinding(.title),
+                        factsPos: blockPositionBinding(.facts),
+                        gridPos: blockPositionBinding(.grid),
+                        footerPos: blockPositionBinding(.footer),
                         onReset: {
-                            preferences.settings.layoutTitleYRatio = 0.15
-                            preferences.settings.layoutFactsYRatio = 0.45
-                            preferences.settings.layoutGridYRatio = 0.50
-                            preferences.settings.layoutFooterBottomRatio = 0.04
+                            let defaults = StylePreset.defaultPositions(
+                                for: preferences.settings.wallpaperStyle)
+                            preferences.settings.updateActivePreset { preset in
+                                preset.positions = defaults
+                            }
                         },
                         style: style
                     )
@@ -182,35 +189,21 @@ struct ContentView: View {
         }
     }
 
-    private var layoutTitleYBinding: Binding<Double> {
+    private var wallpaperStyleBinding: Binding<WallpaperStyle> {
         Binding {
-            preferences.settings.clampedLayoutTitleYRatio
+            preferences.settings.wallpaperStyle
         } set: { newValue in
-            preferences.settings.layoutTitleYRatio = newValue
+            preferences.settings.wallpaperStyle = newValue
         }
     }
 
-    private var layoutFactsYBinding: Binding<Double> {
+    private func blockPositionBinding(_ block: BlockID) -> Binding<BlockPosition> {
         Binding {
-            preferences.settings.clampedLayoutFactsYRatio
+            preferences.settings.position(for: block)
         } set: { newValue in
-            preferences.settings.layoutFactsYRatio = newValue
-        }
-    }
-
-    private var layoutGridYBinding: Binding<Double> {
-        Binding {
-            preferences.settings.clampedLayoutGridYRatio
-        } set: { newValue in
-            preferences.settings.layoutGridYRatio = newValue
-        }
-    }
-
-    private var layoutFooterBottomBinding: Binding<Double> {
-        Binding {
-            preferences.settings.clampedLayoutFooterBottomRatio
-        } set: { newValue in
-            preferences.settings.layoutFooterBottomRatio = newValue
+            preferences.settings.updateActivePreset { preset in
+                preset.setPosition(newValue, for: block)
+            }
         }
     }
 
@@ -1075,7 +1068,156 @@ private struct CalendarRow: View {
     }
 }
 
+private struct WallpaperStyleField: View {
+    @Binding var selection: WallpaperStyle
+    let style: ThemeStyle
+
+    var body: some View {
+        FieldShell(title: "Wallpaper style", icon: "rectangle.on.rectangle.angled", style: style) {
+            VStack(spacing: 10) {
+                ForEach(WallpaperStyle.allCases) { wpStyle in
+                    WallpaperStyleCard(
+                        wpStyle: wpStyle,
+                        isSelected: selection == wpStyle,
+                        accent: style.accent
+                    ) {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            selection = wpStyle
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct WallpaperStyleCard: View {
+    let wpStyle: WallpaperStyle
+    let isSelected: Bool
+    let accent: Color
+    let onTap: () -> Void
+
+    var body: some View {
+        let themeStyle = wpStyle.defaultTheme.style
+
+        Button(action: onTap) {
+            HStack(spacing: 14) {
+                styleThumbnail(themeStyle: themeStyle)
+                    .frame(width: 96, height: 60)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(isSelected ? accent : Color.primary.opacity(0.10),
+                                    lineWidth: isSelected ? 2 : 1)
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(wpStyle.title)
+                        .font(.system(.headline, design: .rounded))
+                    Text(wpStyle.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? accent : Color.primary.opacity(0.25),
+                                lineWidth: 1.5)
+                        .frame(width: 22, height: 22)
+                    if isSelected {
+                        Circle().fill(accent).frame(width: 14, height: 14)
+                    }
+                }
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(isSelected ? accent.opacity(0.10) : Color.primary.opacity(0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? accent.opacity(0.45) : Color.primary.opacity(0.08),
+                            lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func styleThumbnail(themeStyle: ThemeStyle) -> some View {
+        ZStack(alignment: .topLeading) {
+            LinearGradient(
+                colors: themeStyle.background,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            switch wpStyle {
+            case .classic:
+                // L-shape: title left, mini grid right
+                HStack(spacing: 6) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Rectangle().fill(themeStyle.foreground).frame(width: 18, height: 4)
+                        Rectangle().fill(themeStyle.foreground.opacity(0.5)).frame(width: 12, height: 3)
+                        Rectangle().fill(themeStyle.foreground).frame(width: 18, height: 4)
+                        Spacer(minLength: 0)
+                    }
+                    miniGridSwatch(themeStyle: themeStyle)
+                }
+                .padding(8)
+            case .editorial:
+                // Centered big title, grid below
+                VStack(spacing: 4) {
+                    Rectangle().fill(themeStyle.foreground).frame(width: 50, height: 6)
+                    miniGridSwatch(themeStyle: themeStyle)
+                        .frame(height: 20)
+                    Rectangle().fill(themeStyle.foreground.opacity(0.5)).frame(width: 40, height: 2)
+                }
+                .padding(8)
+            case .minimal:
+                // Centered narrow column
+                VStack(spacing: 5) {
+                    Rectangle().fill(themeStyle.foreground).frame(width: 40, height: 4)
+                    HStack(spacing: 1) {
+                        ForEach(0..<24, id: \.self) { _ in
+                            Rectangle().fill(themeStyle.lived.first ?? themeStyle.foreground)
+                                .frame(width: 1.5, height: 8)
+                        }
+                    }
+                    Rectangle().fill(themeStyle.foreground.opacity(0.4)).frame(width: 30, height: 2)
+                }
+                .padding(8)
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func miniGridSwatch(themeStyle: ThemeStyle) -> some View {
+        VStack(spacing: 1) {
+            ForEach(0..<5, id: \.self) { row in
+                HStack(spacing: 1) {
+                    ForEach(0..<10, id: \.self) { col in
+                        let isLived = row >= 2 || (row == 2 && col < 4)
+                        Rectangle()
+                            .fill(
+                                isLived
+                                    ? (themeStyle.lived.first ?? themeStyle.foreground)
+                                    : themeStyle.future
+                            )
+                            .frame(width: 2.5, height: 2.5)
+                    }
+                }
+            }
+        }
+    }
+}
+
 private struct ThemeField: View {
+    let availableThemes: [CalendarTheme]
     @Binding var mode: ThemeMode
     @Binding var customSelection: CalendarTheme
     @Binding var daySelection: CalendarTheme
@@ -1094,6 +1236,7 @@ private struct ThemeField: View {
 
                 if mode == .custom {
                     ThemeSwatchGrid(
+                        themes: availableThemes,
                         selection: $customSelection,
                         accent: style.accent
                     )
@@ -1105,6 +1248,7 @@ private struct ThemeField: View {
                             style: style
                         )
                         ThemeSwatchGrid(
+                            themes: availableThemes,
                             selection: $daySelection,
                             accent: style.accent
                         )
@@ -1115,6 +1259,7 @@ private struct ThemeField: View {
                             style: style
                         )
                         ThemeSwatchGrid(
+                            themes: availableThemes,
                             selection: $nightSelection,
                             accent: style.accent
                         )
@@ -1127,6 +1272,24 @@ private struct ThemeField: View {
                 }
             }
             .animation(.snappy(duration: 0.2), value: mode)
+        }
+        // If the user switches wallpaper style and their saved themes
+        // aren't in the new style's list, snap to defaults silently.
+        .onChange(of: availableThemes) { _ in
+            sanitizeSelections()
+        }
+        .onAppear { sanitizeSelections() }
+    }
+
+    private func sanitizeSelections() {
+        if !availableThemes.contains(customSelection) {
+            customSelection = availableThemes.first ?? customSelection
+        }
+        if !availableThemes.contains(daySelection) {
+            daySelection = availableThemes.first { $0.style.isLight } ?? availableThemes.first ?? daySelection
+        }
+        if !availableThemes.contains(nightSelection) {
+            nightSelection = availableThemes.first { !$0.style.isLight } ?? availableThemes.first ?? nightSelection
         }
     }
 }
@@ -1150,6 +1313,7 @@ private struct ThemeSubsectionLabel: View {
 }
 
 private struct ThemeSwatchGrid: View {
+    let themes: [CalendarTheme]
     @Binding var selection: CalendarTheme
     let accent: Color
 
@@ -1158,7 +1322,7 @@ private struct ThemeSwatchGrid: View {
             columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3),
             spacing: 10
         ) {
-            ForEach(CalendarTheme.allCases) { theme in
+            ForEach(themes) { theme in
                 ThemeSwatch(
                     theme: theme,
                     isSelected: selection == theme,
@@ -1220,46 +1384,44 @@ private struct ThemeSwatch: View {
 }
 
 private struct LayoutField: View {
-    @Binding var titleY: Double
-    @Binding var factsY: Double
-    @Binding var gridY: Double
-    @Binding var footerBottom: Double
+    @Binding var titlePos: BlockPosition
+    @Binding var factsPos: BlockPosition
+    @Binding var gridPos: BlockPosition
+    @Binding var footerPos: BlockPosition
     let onReset: () -> Void
     let style: ThemeStyle
 
     var body: some View {
-        FieldShell(title: "Layout", icon: "square.split.bottomrightquarter", style: style) {
+        FieldShell(
+            title: "Layout",
+            icon: "square.split.bottomrightquarter",
+            style: style
+        ) {
             VStack(alignment: .leading, spacing: 14) {
-                LayoutSlider(
-                    label: "Title",
-                    icon: "textformat",
-                    value: $titleY,
-                    range: 0.0...0.85,
-                    format: percentFromTop,
+                Text(
+                    "Drag each block horizontally and vertically. Positions are saved per wallpaper style."
+                )
+                .font(.caption)
+                .foregroundStyle(style.foreground.opacity(0.6))
+
+                BlockLayoutControl(
+                    block: .title,
+                    position: $titlePos,
                     style: style
                 )
-                LayoutSlider(
-                    label: "Four fields",
-                    icon: "square.grid.2x2",
-                    value: $factsY,
-                    range: 0.0...0.95,
-                    format: percentFromTop,
+                BlockLayoutControl(
+                    block: .facts,
+                    position: $factsPos,
                     style: style
                 )
-                LayoutSlider(
-                    label: "Weeks grid",
-                    icon: "rectangle.split.3x3",
-                    value: $gridY,
-                    range: 0.0...1.0,
-                    format: percentCenterFromTop,
+                BlockLayoutControl(
+                    block: .grid,
+                    position: $gridPos,
                     style: style
                 )
-                LayoutSlider(
-                    label: "Footer",
-                    icon: "text.alignleft",
-                    value: $footerBottom,
-                    range: 0.0...0.30,
-                    format: percentFromBottom,
+                BlockLayoutControl(
+                    block: .footer,
+                    position: $footerPos,
                     style: style
                 )
 
@@ -1274,43 +1436,85 @@ private struct LayoutField: View {
             }
         }
     }
-
-    private func percentFromTop(_ value: Double) -> String {
-        "\(Int((value * 100).rounded()))% from top"
-    }
-
-    private func percentFromBottom(_ value: Double) -> String {
-        "\(Int((value * 100).rounded()))% from bottom"
-    }
-
-    private func percentCenterFromTop(_ value: Double) -> String {
-        "\(Int((value * 100).rounded()))% center"
-    }
 }
 
-private struct LayoutSlider: View {
-    let label: String
-    let icon: String
-    @Binding var value: Double
-    let range: ClosedRange<Double>
-    let format: (Double) -> String
+private struct BlockLayoutControl: View {
+    let block: BlockID
+    @Binding var position: BlockPosition
     let style: ThemeStyle
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Label(label, systemImage: icon)
-                    .font(.system(.callout, design: .rounded).weight(.medium))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: block.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(style.accent)
+                Text(block.displayName)
+                    .font(.system(.callout, design: .rounded).weight(.semibold))
                     .foregroundStyle(style.foreground)
                 Spacer()
-                Text(format(value))
-                    .font(.system(.caption, design: .rounded).weight(.semibold))
-                    .foregroundStyle(style.foreground.opacity(0.6))
+                Text("\(Int((position.x * 100).rounded()))%, \(Int((position.y * 100).rounded()))%")
+                    .font(.system(.caption, design: .rounded).weight(.medium))
+                    .foregroundStyle(style.foreground.opacity(0.55))
                     .monospacedDigit()
             }
-            Slider(value: $value, in: range)
+
+            HStack(spacing: 12) {
+                AxisSlider(
+                    axis: .horizontal,
+                    value: Binding(
+                        get: { position.x },
+                        set: { position.x = $0 }
+                    ),
+                    style: style
+                )
+                AxisSlider(
+                    axis: .vertical,
+                    value: Binding(
+                        get: { position.y },
+                        set: { position.y = $0 }
+                    ),
+                    style: style
+                )
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private enum LayoutAxis {
+    case horizontal, vertical
+
+    var icon: String {
+        switch self {
+        case .horizontal: return "arrow.left.and.right"
+        case .vertical: return "arrow.up.and.down"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .horizontal: return "X"
+        case .vertical: return "Y"
+        }
+    }
+}
+
+private struct AxisSlider: View {
+    let axis: LayoutAxis
+    @Binding var value: Double
+    let style: ThemeStyle
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: axis.icon)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(style.foreground.opacity(0.55))
+                .frame(width: 14)
+            Slider(value: $value, in: 0.0...1.0)
                 .tint(style.accent)
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
